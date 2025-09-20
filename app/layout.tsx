@@ -8,7 +8,6 @@ import "./globals.css"
 export const metadata: Metadata = {
   title: "TalentFlow - Job Candidate Assessment Platform",
   description: "Premium job candidate assessment and recruitment management platform",
-  generator: "v0.app",
 }
 
 export default function RootLayout({
