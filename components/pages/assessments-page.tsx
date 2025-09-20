@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { useRouter } from "@/lib/router"
-import { db, type Assessment, type Job } from "@/lib/database"
+import { db, type Assessment, type Job, ensureSeeded } from "@/lib/database"
 import { AssessmentCard } from "@/components/assessment-card"
 import { Plus, Search, ClipboardList } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
@@ -23,7 +23,11 @@ export function AssessmentsPage() {
   const [editingAssessment, setEditingAssessment] = useState<Assessment | null>(null)
 
   useEffect(() => {
-    loadData()
+    async function seedAndLoad() {
+      await ensureSeeded()
+      await loadData()
+    }
+    seedAndLoad()
   }, [])
 
   const loadData = async () => {

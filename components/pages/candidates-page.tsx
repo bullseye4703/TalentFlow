@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useRouter } from "@/lib/router"
-import { db, type Candidate, type Job } from "@/lib/database"
+import { db, type Candidate, type Job, ensureSeeded } from "@/lib/database"
 import { CandidateList } from "@/components/candidate-list"
 import { CandidateKanban } from "@/components/candidate-kanban"
 import { Search, Users, LayoutGrid, List } from "lucide-react"
@@ -23,7 +23,11 @@ export function CandidatesPage() {
   const [viewMode, setViewMode] = useState<"list" | "kanban">("list")
 
   useEffect(() => {
-    loadData()
+    async function seedAndLoad() {
+      await ensureSeeded()
+      await loadData()
+    }
+    seedAndLoad()
   }, [])
 
   const loadData = async () => {

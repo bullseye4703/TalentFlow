@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { useRouter } from "@/lib/router"
-import { db } from "@/lib/database"
+import { db,ensureSeeded } from "@/lib/database"
 import { DataSeeder } from "@/components/data-seeder"
 import { Briefcase, Users, ClipboardList, CheckCircle, TrendingUp, Activity } from "lucide-react"
 
@@ -21,8 +21,12 @@ export function HomePage() {
   })
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    loadStats()
+   useEffect(() => {
+    async function seedAndLoad() {
+      await ensureSeeded()
+      await loadStats()
+    }
+    seedAndLoad()
     // const interval = setInterval(loadStats, 5000) // Refresh every 5 seconds
     // return () => clearInterval(interval)
   }, [])

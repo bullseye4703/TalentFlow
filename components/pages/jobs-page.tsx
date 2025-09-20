@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useRouter } from "@/lib/router"
-import { db, type Job } from "@/lib/database"
+import { db, type Job, ensureSeeded } from "@/lib/database"
 import { JobForm } from "@/components/job-form"
 import { JobCard } from "@/components/job-card"
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core"
@@ -39,7 +39,11 @@ export function JobsPage() {
   )
 
   useEffect(() => {
-    loadJobs()
+    async function seedAndLoad() {
+      await ensureSeeded()
+      await loadJobs()
+    }
+    seedAndLoad()
   }, [])
 
   useEffect(() => {
