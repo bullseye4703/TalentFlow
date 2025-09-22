@@ -4,16 +4,19 @@ import { useState, useEffect } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useRouter } from "@/lib/router"
 import { db, type Job } from "@/lib/database"
 import { ArrowLeft, Calendar, Tag, Users, ClipboardList, Edit, Archive, RotateCcw } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { toast } from "@/hooks/use-toast"
+import { JobForm } from "@/components/job-form"
 
 export function JobDetailPage() {
   const { navigate, params } = useRouter()
   const [job, setJob] = useState<Job | null>(null)
   const [loading, setLoading] = useState(true)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
 
   useEffect(() => {
     if (params.jobId) {
@@ -35,6 +38,34 @@ export function JobDetailPage() {
       })
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleEditJob = async (jobData: Partial<Job>) => {
+    if (!job) return
+
+    try {
+      const updatedJob = {
+        ...job,
+        ...jobData,
+        updatedAt: new Date(),
+      }
+
+      await db.jobs.update(job.id, updatedJob)
+      setJob(updatedJob)
+      setIsEditModalOpen(false)
+
+      toast({
+        title: "Success",
+        description: "Job updated successfully!",
+      })
+    } catch (error) {
+      console.error("Failed to update job:", error)
+      toast({
+        title: "Error",
+        description: "Failed to update job. Please try again.",
+        variant: "destructive",
+      })
     }
   }
 
@@ -110,7 +141,7 @@ export function JobDetailPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => navigate("/jobs")}>
+          <Button variant="outline" onClick={() => setIsEditModalOpen(true)}>
             <Edit className="w-4 h-4 mr-2" />
             Edit Job
           </Button>
@@ -129,6 +160,16 @@ export function JobDetailPage() {
           </Button>
         </div>
       </div>
+
+      {/* --- Edit Job Modal --- */}
+      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Job</DialogTitle>
+          </DialogHeader>
+          <JobForm initialData={job} onSubmit={handleEditJob} onCancel={() => setIsEditModalOpen(false)} />
+        </DialogContent>
+      </Dialog>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Main Content */}

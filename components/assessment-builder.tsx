@@ -218,7 +218,7 @@ export function AssessmentBuilder({ assessmentId }: AssessmentBuilderProps) {
   const shareAssessment = async () => {
     if (!assessment) return
 
-    const shareUrl = `${window.location.origin}/assessment/${assessment.shareableLink}`
+    const shareUrl = `${window.location.origin}/assessments/${assessment.id}`
     try {
       await navigator.clipboard.writeText(shareUrl)
       toast({
@@ -582,6 +582,59 @@ function QuestionBuilder({
 }
 
 function AssessmentPreviewPane({ assessment }: { assessment: Assessment }) {
+  const [responses, setResponses] = useState<{ [questionId: string]: any }>({})
+  const [submitted, setSubmitted] = useState(false)
+  const [answeredCount, setAnsweredCount] = useState(0)
+  const [unansweredRequired, setUnansweredRequired] = useState<string[]>([])
+
+  const handleResponseChange = (questionId: string, value: any) => {
+    setResponses((prev) => ({ ...prev, [questionId]: value }))
+  }
+
+  const handleSubmit = () => {
+    const missingRequired: string[] = []
+
+    assessment.sections.forEach((section) => {
+      section.questions.forEach((question) => {
+        const value = responses[question.id]
+        const isAnswered =
+          value !== undefined &&
+          value !== null &&
+          value !== "" &&
+          !(Array.isArray(value) && value.length === 0)
+        if (question.required && !isAnswered) {
+          missingRequired.push(`${section.title} → ${question.question}`)
+        }
+      })
+    })
+
+    if (missingRequired.length > 0) {
+      setUnansweredRequired(missingRequired)
+      setSubmitted(false)
+      return
+    }
+
+    // Count answered questions
+    let count = 0
+    assessment.sections.forEach((section) => {
+      section.questions.forEach((question) => {
+        const value = responses[question.id]
+        if (
+          value !== undefined &&
+          value !== null &&
+          value !== "" &&
+          !(Array.isArray(value) && value.length === 0)
+        ) {
+          count++
+        }
+      })
+    })
+
+    setAnsweredCount(count)
+    setUnansweredRequired([])
+    setSubmitted(true)
+  }
+
   return (
     <div className="space-y-6 max-h-[600px] overflow-y-auto">
       <div className="text-center pb-6 border-b border-border">
@@ -596,70 +649,121 @@ function AssessmentPreviewPane({ assessment }: { assessment: Assessment }) {
             {section.description && <p className="text-sm text-muted-foreground mb-4">{section.description}</p>}
           </div>
 
-          {section.questions.map((question, questionIndex) => (
-            <div key={question.id} className="p-4 bg-muted/30 rounded-lg">
-              <div className="flex items-center gap-2 mb-3">
-                <span className="text-sm font-medium">
-                  {sectionIndex + 1}.{questionIndex + 1}
-                </span>
-                <span className="text-sm">{question.question}</span>
-                {question.required && <span className="text-destructive text-sm">*</span>}
+          {section.questions.map((question, questionIndex) => {
+            const isMissingRequired = unansweredRequired.includes(`${section.title} → ${question.question}`)
+            return (
+              <div
+                key={question.id}
+                className={`p-4 rounded-lg ${
+                  isMissingRequired ? "bg-red-100 border border-red-400" : "bg-muted/30"
+                }`}
+              >
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-sm font-medium">
+                    {sectionIndex + 1}.{questionIndex + 1}
+                  </span>
+                  <span className="text-sm">{question.question}</span>
+                  {question.required && <span className="text-destructive text-sm">*</span>}
+                </div>
+
+                {/* Render input based on question type */}
+                {question.type === "single-choice" && (
+                  <div className="space-y-2">
+                    {question.options?.map((option, index) => (
+                      <label key={index} className="flex items-center gap-2 text-sm">
+                        <input
+                          type="radio"
+                          name={question.id}
+                          value={option}
+                          checked={responses[question.id] === option}
+                          onChange={() => handleResponseChange(question.id, option)}
+                        />
+                        {option}
+                      </label>
+                    ))}
+                  </div>
+                )}
+
+                {question.type === "multi-choice" && (
+                  <div className="space-y-2">
+                    {question.options?.map((option, index) => (
+                      <label key={index} className="flex items-center gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          name={question.id + "-" + index}
+                          value={option}
+                          checked={Array.isArray(responses[question.id]) && responses[question.id].includes(option)}
+                          onChange={(e) => {
+                            const prev = Array.isArray(responses[question.id]) ? responses[question.id] : []
+                            if (e.target.checked) {
+                              handleResponseChange(question.id, [...prev, option])
+                            } else {
+                              handleResponseChange(question.id, prev.filter((o: string) => o !== option))
+                            }
+                          }}
+                        />
+                        {option}
+                      </label>
+                    ))}
+                  </div>
+                )}
+
+                {(question.type === "short-text" || question.type === "long-text") && (
+                  <textarea
+                    className="w-full border rounded p-2"
+                    rows={question.type === "long-text" ? 4 : 2}
+                    value={responses[question.id] || ""}
+                    onChange={(e) => handleResponseChange(question.id, e.target.value)}
+                    placeholder="Enter your answer"
+                  />
+                )}
+
+                {question.type === "numeric" && (
+                  <input
+                    type="number"
+                    className="w-full border rounded p-2"
+                    value={responses[question.id] || ""}
+                    onChange={(e) => handleResponseChange(question.id, e.target.value)}
+                    placeholder="Enter a number"
+                  />
+                )}
+
+                {question.type === "file-upload" && (
+                  <input
+                    type="file"
+                    className="w-full border rounded p-2"
+                    onChange={(e) => handleResponseChange(question.id, e.target.files?.[0] || null)}
+                  />
+                )}
               </div>
-
-              {question.type === "single-choice" && (
-                <div className="space-y-2">
-                  {question.options?.map((option, index) => (
-                    <label key={index} className="flex items-center gap-2 text-sm">
-                      <input type="radio" name={question.id} disabled />
-                      {option}
-                    </label>
-                  ))}
-                </div>
-              )}
-
-              {question.type === "multi-choice" && (
-                <div className="space-y-2">
-                  {question.options?.map((option, index) => (
-                    <label key={index} className="flex items-center gap-2 text-sm">
-                      <input type="checkbox" disabled />
-                      {option}
-                    </label>
-                  ))}
-                </div>
-              )}
-
-              {question.type === "short-text" && <Input placeholder="Your answer..." disabled />}
-
-              {question.type === "long-text" && <Textarea placeholder="Your answer..." disabled rows={3} />}
-
-              {question.type === "numeric" && (
-                <Input
-                  type="number"
-                  placeholder="Enter a number..."
-                  min={question.validation?.min}
-                  max={question.validation?.max}
-                  disabled
-                />
-              )}
-
-              {question.type === "file-upload" && (
-                <div className="border-2 border-dashed border-border rounded-lg p-6 text-center text-muted-foreground">
-                  Click to upload or drag and drop
-                </div>
-              )}
-            </div>
-          ))}
+            )
+          })}
         </div>
       ))}
 
       {assessment.sections.length === 0 && (
-        <div className="text-center py-12 text-muted-foreground">
-          <p>No sections added yet. Add sections and questions to see the preview.</p>
-        </div>
+        <div className="text-center text-muted-foreground">No sections in this assessment.</div>
       )}
+
+      {/* Submit Button */}
+      <div className="text-center mt-6">
+        <Button onClick={handleSubmit}>Submit</Button>
+        {submitted && unansweredRequired.length === 0 && (
+          <p className="mt-2 text-sm text-muted-foreground">
+            You answered {answeredCount} out of{" "}
+            {assessment.sections.reduce((acc, s) => acc + s.questions.length, 0)} questions.
+          </p>
+        )}
+        {unansweredRequired.length > 0 && (
+          <p className="mt-2 text-sm text-destructive">
+            Please answer all required questions. Missing: {unansweredRequired.length}
+          </p>
+        )}
+      </div>
     </div>
   )
 }
+
 
 function AssessmentPreview({
   assessment,

@@ -105,7 +105,7 @@ export function AssessmentsPage() {
   }
 
   const handleShareAssessment = async (assessment: Assessment) => {
-    const shareUrl = `${window.location.origin}/assessment/${assessment.shareableLink}`
+    const shareUrl = `${window.location.origin}/assessments/${assessment.id}`
     try {
       await navigator.clipboard.writeText(shareUrl)
       toast({
