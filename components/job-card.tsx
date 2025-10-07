@@ -96,6 +96,10 @@ export function JobCard({ job, onEdit, onArchive, onView, onDelete, isDragMode, 
               <span className="text-muted-foreground">Qualifications:</span>
               <span className="ml-2 font-medium">{job.qualifications.length}</span>
             </div>
+            <div>
+              <span className="text-muted-foreground">salary:</span>
+              <span className="ml-2 font-medium">${job.salary}</span>
+            </div>
           </div>
         </div>
 

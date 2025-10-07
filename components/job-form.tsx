@@ -25,6 +25,7 @@ export function JobForm({ initialData, onSubmit, onCancel }: JobFormProps) {
     responsibilities: initialData?.responsibilities || [],
     qualifications: initialData?.qualifications || [],
     tags: initialData?.tags || [],
+    salary: initialData?.salary || 0,
   })
 
   const [newResponsibility, setNewResponsibility] = useState("")
@@ -97,6 +98,13 @@ export function JobForm({ initialData, onSubmit, onCancel }: JobFormProps) {
     setFormData((prev) => ({
       ...prev,
       tags: prev.tags.filter((t) => t !== tag),
+    }))
+  }
+
+  const setSalary = (salary: number) =>{
+    setFormData((prev) =>({
+      ...prev,
+      salary
     }))
   }
 
@@ -251,13 +259,22 @@ export function JobForm({ initialData, onSubmit, onCancel }: JobFormProps) {
             {formData.tags.map((tag) => (
               <Badge key={tag} variant="secondary" className="flex items-center gap-1">
                 {tag}
-                <button type="button" onClick={() => removeTag(tag)} className="ml-1 hover:text-destructive">
+                <button title="xyz" type="button" onClick={() => removeTag(tag)} className="ml-1 hover:text-destructive">
                   <X className="w-3 h-3" />
                 </button>
               </Badge>
             ))}
           </div>
         </div>
+      </div>
+
+      <div>
+        <Label>Salary</Label>
+        <Input 
+          value = {formData.salary}
+          placeholder="0"
+          onChange={(e) => setSalary(Number(e.target.value))}
+        />
       </div>
 
       <div className="flex justify-end gap-3 pt-4 border-t">

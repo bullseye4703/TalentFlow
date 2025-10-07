@@ -82,7 +82,7 @@ export function JobsPage() {
       filtered = filtered.filter((job) => job.status === statusFilter)
     }
 
-    if (tagFilter) {
+    if (tagFilter && tagFilter!== "allTags") {
       filtered = filtered.filter((job) => job.tags.includes(tagFilter))
     }
 
@@ -101,6 +101,7 @@ export function JobsPage() {
         qualifications: jobData.qualifications || [],
         status: "active",
         tags: jobData.tags || [],
+        salary: jobData.salary || 0,
         createdAt: new Date(),
         updatedAt: new Date(),
         order: jobs.length,
